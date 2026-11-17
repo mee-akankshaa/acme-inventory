@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Print styles ────────────────────────────────────────── */
+@media print {
+  /* Hide everything except the print slip */
+  body > #root > * { display: none !important; }
+  #print-slip { display: block !important; }
+
+  /* Slip layout */
+  #print-slip {
+    width: 148mm;           /* A5 width */
+    margin: 0 auto;
+    padding: 12mm;
+    font-family: 'Inter', sans-serif;
+    font-size: 11pt;
+    color: #111;
+    border: none;
+    box-shadow: none;
+  }
+
+  #print-slip .slip-header {
+    text-align: center;
+    border-bottom: 2px solid #1E1B4B;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+
+  #print-slip .slip-table td { padding: 3px 0; }
+  #print-slip .slip-table td:first-child { width: 40%; color: #555; }
+  #print-slip .slip-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #print-slip .slip-divider { border-top: 1px dashed #ccc; margin: 10px 0; }
+  #print-slip .slip-footer {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+  }
+  #print-slip .sig-box {
+    border-top: 1px solid #333;
+    padding-top: 4px;
+    text-align: center;
+    font-size: 9pt;
+    color: #555;
+  }
+}
+
+/* Visible print preview (screen) */
+#print-slip {
+  display: none;
+}
+#print-slip.preview-visible {
+  display: block;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 420px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+}

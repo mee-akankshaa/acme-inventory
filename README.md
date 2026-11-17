@@ -1,33 +1,65 @@
 # Acme Inventory
 
-A stock-management web app: products, vendors, buyers, stock-in / stock-out with print slips,
-low-stock alerts, reports, and Excel/CSV/PDF export and import. All data in this repo is synthetic.
+A stock-management app I built to practise getting the unglamorous parts of inventory right: stock that can never go negative, an audit trail you can't quietly edit, and a UI a warehouse person can use without training.
+
+You can manage products, vendors and buyers, record stock-in and stock-out (with printable slips), get low-stock alerts, and export or import data as Excel, CSV or PDF.
+
+Everything here runs on invented data. It's a clean-room rebuild of a system I originally worked on, redone with synthetic records so the code can be shown publicly.
+
+## What I cared about
+
+- **Stock can't go below zero.** `quantity_on_hand` has a database-level `CHECK (>= 0)`. The application validates too, but the database is the last line of defence.
+- **Transactions are append-only.** Corrections are new rows, not edits, so history stays trustworthy.
+- **Stock moves are atomic.** Each stock-in or stock-out runs in one transaction with row locks, so two people updating the same item at once don't corrupt the count.
+- **Boring, solid auth.** JWT access and refresh tokens, bcrypt, rate-limited login, and an auth check on every route except health and login.
+- **Alerts off the request path.** Low-stock checks go through a BullMQ queue on Redis instead of slowing down the request.
 
 ## Stack
-React 18 + Vite + Tailwind + React Router (web) / Node 20 + Fastify 4 + Zod (api) /
-PostgreSQL 16 + Prisma / Redis + BullMQ (alert queue) / Vitest + Supertest.
 
-Design notes: transactions are append-only, `inventory.quantity_on_hand` has a DB-level `CHECK (>= 0)`,
-stock operations run in transactions with row locks, JWT access + refresh tokens, bcrypt, login rate-limiting.
+| Layer | Tech |
+|---|---|
+| Web | React 18, Vite, Tailwind, React Router |
+| API | Node 20, Fastify 4, Zod, TypeScript |
+| Data | PostgreSQL 16, Prisma |
+| Queue | Redis, BullMQ |
+| Tests | Vitest, Supertest (87 API tests) |
 
-## Run locally
+## Run it locally
+
 ```bash
-cp .env.example .env            # edit placeholders
-docker compose up -d            # local Postgres + Redis
+cp .env.example .env            # placeholders only, edit as you like
+docker compose up -d            # Postgres + Redis
 npm install
-cp .env apps/api/.env           # api reads its own .env
-npm run db:migrate              # applies Prisma migrations
-npm run db:seed                 # demo users + small dataset
+cp .env apps/api/.env           # the API reads its own .env
+npm run db:migrate
+npm run db:seed                 # demo users + a small dataset
 npm run dev:api                 # http://localhost:4000
 npm run dev:web                 # http://localhost:5173
-npm test                        # needs the small seeded DB (run before seed:demo)
-npm run seed:demo --workspace=apps/api   # optional: larger synthetic dataset (do this AFTER tests)
 ```
 
-## Demo logins (seed data only)
+Run the tests before loading the larger demo data, because they expect the small seed:
+
+```bash
+npm test
+npm run seed:demo --workspace=apps/api   # optional: bigger synthetic dataset
+```
+
+## Demo logins
+
 | Email | Password | Role |
 |---|---|---|
 | admin@example.com | Demo@12345 | admin |
 | staff@example.com | Demo@12345 | staff |
 
-Override the seed password with `DEMO_PASSWORD`. Never reuse these outside a local demo.
+These exist only in the seed data. Set `DEMO_PASSWORD` to change them, and never reuse them anywhere real.
+
+## Project layout
+
+```
+apps/api   Fastify API: routes, services, queue workers, Prisma schema and migrations
+apps/web   React app: pages for products, vendors, buyers, stock movements, alerts, reports
+```
+
+## How it was built
+
+I built this with AI-assisted development (Claude Code) and reviewed, tested and adjusted the output myself. That workflow is a deliberate part of how I work, so I'm upfront about it.

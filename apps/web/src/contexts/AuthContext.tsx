@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 import axios from 'axios'
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
 import { clearAuth } from '../services/api'
 
 interface User {
@@ -34,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      const { data } = await axios.post('/api/auth/login', { email, password })
+      const { data } = await axios.post(API_BASE + '/api/auth/login', { email, password })
       localStorage.setItem('accessToken', data.accessToken)
       localStorage.setItem('refreshToken', data.refreshToken)
       localStorage.setItem('user', JSON.stringify(data.user))
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const accessToken = localStorage.getItem('accessToken')
     try {
       await axios.post(
-        '/api/auth/logout',
+        API_BASE + '/api/auth/logout',
         { refreshToken },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       )

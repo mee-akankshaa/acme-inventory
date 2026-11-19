@@ -1,0 +1,51 @@
+# Render Blueprint: free API + free Postgres + free Redis (Key Value) + free static web app.
+databases:
+  - name: acme-inventory-db
+    plan: free
+    databaseName: acme_inventory
+    user: inventory_user
+services:
+  - type: keyvalue
+    name: acme-inventory-redis
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+  - type: web
+    name: acme-inventory-api
+    runtime: node
+    plan: free
+    rootDir: apps/api
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build && npx prisma migrate deploy && (npx tsx prisma/seed.ts || true) && (npx tsx prisma/seed-demo.ts || true)
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: acme-inventory-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: acme-inventory-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://acme-inventory-web.onrender.com
+      - key: NODE_ENV
+        value: production
+  - type: web
+    name: acme-inventory-web
+    runtime: static
+    rootDir: apps/web
+    buildCommand: npm ci --include=dev && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://acme-inventory-api.onrender.com
